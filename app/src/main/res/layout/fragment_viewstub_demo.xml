@@ -4,7 +4,7 @@
     android:layout_height="match_parent">
 
     <LinearLayout
-        android:id="@+id/container"
+        android:id="@+id/main_container"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
@@ -13,7 +13,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Demo: ViewStub (Lazy Load)"
+            android:text="Demo: ViewStub (Chuẩn Lý Thuyết)"
             android:textSize="24sp"
             android:textStyle="bold"
             android:layout_marginBottom="8dp"/>
@@ -21,22 +21,30 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="ViewStub là một View 'vô hình' và 'siêu nhẹ'. Nó chỉ load layout thực sự khi bạn yêu cầu (inflate). Dùng để tiết kiệm bộ nhớ cho các view ít dùng (ví dụ: màn hình lỗi mạng, popup)."
+            android:text="Kịch bản: Màn hình khởi động chứa một 'Panel VIP' (ẩn). Ta so sánh chi phí khởi tạo ban đầu giữa việc dùng Visibility=GONE và ViewStub."
             android:layout_marginBottom="24dp"/>
 
-        <!-- CONTROLS -->
+        <!-- SETUP CONTROLS -->
+        <TextView
+            android:text="Bước 1: Mô phỏng Khởi động (onCreate)"
+            android:textStyle="bold"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"/>
+            
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
-            android:layout_marginBottom="16dp">
+            android:layout_marginBottom="16dp"
+            android:gravity="center_vertical">
             
             <Button
                 android:id="@+id/btn_load_eager"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="Load Ngay"
+                android:text="Cách cũ (GONE)"
+                android:textSize="12sp"
                 android:layout_marginEnd="4dp"
                 style="@style/Widget.MaterialComponents.Button.OutlinedButton"/>
                 
@@ -45,28 +53,54 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="Lazy Load (Stub)"
-                android:layout_marginStart="4dp"/>
+                android:text="Cách mới (Stub)"
+                android:textSize="12sp"
+                android:layout_marginStart="4dp"
+                android:layout_marginEnd="4dp"/>
         </LinearLayout>
+
+        <!-- ACTION CONTROLS -->
+        <TextView
+            android:text="Bước 2: Người dùng tương tác"
+            android:textStyle="bold"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"/>
+
+        <Button
+            android:id="@+id/btn_show_panel"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Hiện Panel VIP (User Click)"
+            android:backgroundTint="#FF9800"
+            android:enabled="false"
+            android:layout_marginBottom="16dp"/>
+            
+        <Button
+            android:id="@+id/btn_reset"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="↻ Làm lại từ đầu"
+            style="@style/Widget.MaterialComponents.Button.TextButton"
+            android:textColor="#F44336"
+            android:layout_gravity="center"/>
         
         <TextView
             android:id="@+id/text_inflation_time"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Chưa load..."
+            android:text="Hãy chọn Bước 1..."
             android:textStyle="bold"
             android:gravity="center"
-            android:padding="8dp"
+            android:padding="12dp"
             android:background="#EEE"
             android:layout_marginBottom="24dp"/>
 
-        <!-- THE STUB -->
-        <ViewStub
-            android:id="@+id/stub_heavy_view"
-            android:inflatedId="@+id/heavy_view_inflated"
+        <!-- CONTAINER -->
+        <LinearLayout
+            android:id="@+id/content_container"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout="@layout/heavy_complex_view" />
+            android:orientation="vertical" />
             
     </LinearLayout>
 </ScrollView>

@@ -7,6 +7,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewStub;
 import android.widget.Button;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -17,70 +18,198 @@ import com.example.layout_optimization.R;
 
 public class ViewStubDemoFragment extends Fragment {
     
-    private ViewStub heavyViewStub;
-    private View inflatedView;
+    private LinearLayout contentContainer;
     private TextView textInflationTime;
-    private Button btnLoadEager, btnLoadLazy;
+    private Button btnLoadEager, btnLoadLazy, btnShowPanel, btnReset;
+    
+    // State Tracking
+    private boolean isEagerMode = false;
+    private View hiddenEagerView;
+    private ViewStub hiddenStub;
     
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_viewstub_demo, container, false);
-        
         initializeViews(view);
         setupControls();
+        
+        // ĐỂ NÚT HIỆN SẴN (nhưng disable) để người dùng dễ thấy
+        btnShowPanel.setVisibility(View.VISIBLE);
+        btnShowPanel.setEnabled(false);
         
         return view;
     }
     
     private void initializeViews(View view) {
-        heavyViewStub = view.findViewById(R.id.stub_heavy_view);
+        contentContainer = view.findViewById(R.id.content_container);
         textInflationTime = view.findViewById(R.id.text_inflation_time);
+        
         btnLoadEager = view.findViewById(R.id.btn_load_eager);
         btnLoadLazy = view.findViewById(R.id.btn_load_lazy);
+        btnShowPanel = view.findViewById(R.id.btn_show_panel);
+        btnReset = view.findViewById(R.id.btn_reset);
     }
     
     private void setupControls() {
-        btnLoadEager.setOnClickListener(v -> loadEagerly());
-        btnLoadLazy.setOnClickListener(v -> loadLazily());
+        btnLoadEager.setOnClickListener(v -> setupEager());
+        btnLoadLazy.setOnClickListener(v -> setupLazy());
+        btnShowPanel.setOnClickListener(v -> showPanel());
+        btnReset.setOnClickListener(v -> resetDemo());
     }
     
-    private void loadEagerly() {
-        if (heavyViewStub == null && inflatedView != null) {
-            Toast.makeText(getContext(), "Resetting view for demo...", Toast.LENGTH_SHORT).show();
-            ViewGroup container = (ViewGroup) getView().findViewById(R.id.container);
-            container.removeView(inflatedView);
-            inflatedView = null;
+    private void resetDemo() {
+        if (contentContainer != null) {
+            contentContainer.removeAllViews();
         }
-
+        hiddenEagerView = null;
+        hiddenStub = null;
+        
+        // Reset trạng thái nút
+        btnShowPanel.setVisibility(View.VISIBLE);
+        btnShowPanel.setEnabled(false);
+        btnShowPanel.setText("Hiện Panel VIP (User Click)");
+        btnShowPanel.setAlpha(0.5f); 
+        
+        textInflationTime.setText("Hãy chọn Bước 1 để bắt đầu...");
+        textInflationTime.setTextColor(Color.BLACK);
+        textInflationTime.setBackgroundColor(Color.parseColor("#EEEEEE"));
+    }
+    
+    private void setupEager() {
+        resetDemo();
+        isEagerMode = true;
+        
         long startTime = System.nanoTime();
         LayoutInflater inflater = LayoutInflater.from(requireContext());
-        ViewGroup container = (ViewGroup) getView().findViewById(R.id.container);
-        View heavyView = inflater.inflate(R.layout.heavy_complex_view, container, true);
-        long inflationTime = (System.nanoTime() - startTime) / 1_000_000;
         
-        textInflationTime.setText(String.format(
-            "Eager Load (No ViewStub): %dms\n" +
-            "Impact: Loaded immediately, delays startup", 
-            inflationTime));
-        textInflationTime.setTextColor(Color.RED);
+        try {
+            hiddenEagerView = inflater.inflate(R.layout.heavy_complex_view, contentContainer, false);
+            hiddenEagerView.setVisibility(View.GONE);
+            contentContainer.addView(hiddenEagerView);
+            
+            long inflationTime = (System.nanoTime() - startTime) / 1_000_000;
+            
+            String hierarchyReport = getHierarchyReport();
+            
+            // THÊM CODE SNIPPET MINH HỌA
+            String codeSnippet = 
+                "📝 CODE CỦA BẠN:\n" +
+                "<include layout=\"@layout/heavy_view\"\n" +
+                "         android:visibility=\"gone\" />";
+            
+            textInflationTime.setText(String.format(
+                "🔴 CÁCH CŨ (GONE):\n" +
+                "⏱ Chi phí khởi động: %dms (Lãng phí!)\n\n" +
+                "%s\n\n" +
+                "ℹ KẾT QUẢ THỰC TẾ (HIERARCHY):\n%s", 
+                inflationTime, codeSnippet, hierarchyReport));
+                
+            textInflationTime.setTextColor(Color.RED);
+            textInflationTime.setBackgroundColor(Color.parseColor("#FFEBEE"));
+            
+            btnShowPanel.setEnabled(true);
+            btnShowPanel.setAlpha(1.0f);
+            Toast.makeText(getContext(), "Đã xong Bước 1.", Toast.LENGTH_SHORT).show();
+            
+        } catch (Exception e) {
+            textInflationTime.setText("Lỗi: " + e.getMessage());
+            e.printStackTrace();
+        }
     }
     
-    private void loadLazily() {
-        if (heavyViewStub == null) {
-            Toast.makeText(requireContext(), "ViewStub already inflated", Toast.LENGTH_SHORT).show();
-            return;
-        }
+    private void setupLazy() {
+        resetDemo();
+        isEagerMode = false;
         
         long startTime = System.nanoTime();
-        inflatedView = heavyViewStub.inflate();
-        heavyViewStub = null; 
+        
+        hiddenStub = new ViewStub(getContext());
+        hiddenStub.setLayoutResource(R.layout.heavy_complex_view);
+        contentContainer.addView(hiddenStub);
+        
         long inflationTime = (System.nanoTime() - startTime) / 1_000_000;
         
+        String hierarchyReport = getHierarchyReport();
+        
+        // THÊM CODE SNIPPET MINH HỌA
+        String codeSnippet = 
+            "📝 CODE CỦA BẠN:\n" +
+            "<ViewStub android:id=\"@+id/stub\"\n" +
+            "          android:layout=\"@layout/heavy_view\" />";
+        
         textInflationTime.setText(String.format(
-            "Lazy Load (ViewStub): %dms\n" +
-            "Impact: Loaded on-demand, faster startup\n" +
-            "Savings: Only loaded when needed", 
-            inflationTime));
-        textInflationTime.setTextColor(Color.GREEN);
+            "🟢 CÁCH MỚI (ViewStub):\n" +
+            "🚀 Chi phí khởi động: %dms (Tuyệt vời!)\n\n" +
+            "%s\n\n" +
+            "ℹ KẾT QUẢ THỰC TẾ (HIERARCHY):\n%s", 
+            inflationTime, codeSnippet, hierarchyReport));
+            
+        textInflationTime.setTextColor(Color.parseColor("#2E7D32"));
+        textInflationTime.setBackgroundColor(Color.parseColor("#E8F5E9"));
+        
+        btnShowPanel.setEnabled(true);
+        btnShowPanel.setAlpha(1.0f);
+        Toast.makeText(getContext(), "Đã xong Bước 1.", Toast.LENGTH_SHORT).show();
+    }
+    
+    private void showPanel() {
+        long startTime = System.nanoTime();
+        try {
+            if (isEagerMode) {
+                if (hiddenEagerView != null) {
+                    hiddenEagerView.setVisibility(View.VISIBLE);
+                }
+            } else {
+                if (hiddenStub != null && hiddenStub.getParent() != null) {
+                    hiddenStub.inflate();
+                }
+            }
+            long showTime = (System.nanoTime() - startTime) / 1_000_000;
+            String mode = isEagerMode ? "CÁCH CŨ" : "VIEWSTUB";
+            
+            String hierarchyReport = getHierarchyReport();
+            
+            textInflationTime.setText("✅ TRẠNG THÁI: ĐÃ HIỆN (" + mode + ")\n" +
+                                      "⏱ Thời gian hiện: " + showTime + "ms\n\n" +
+                                      hierarchyReport);
+            
+            btnShowPanel.setText("Đã hiển thị");
+            btnShowPanel.setEnabled(false);
+            btnShowPanel.setAlpha(0.5f);
+        } catch (Exception e) {
+            Toast.makeText(getContext(), "Lỗi: " + e.getMessage(), Toast.LENGTH_LONG).show();
+        }
+    }
+    
+    private String getHierarchyReport() {
+        StringBuilder sb = new StringBuilder();
+        // sb.append("📊 PHÂN TÍCH HIERARCHY:\n");
+        sb.append("Container\n");
+        
+        if (contentContainer != null) {
+            int count = contentContainer.getChildCount();
+            if (count == 0) sb.append("  (Trống)\n");
+            
+            for (int i = 0; i < count; i++) {
+                View child = contentContainer.getChildAt(i);
+                String name = child.getClass().getSimpleName();
+                String visibility = "";
+                switch (child.getVisibility()) {
+                    case View.VISIBLE: visibility = "VISIBLE (Hiện)"; break;
+                    case View.INVISIBLE: visibility = "INVISIBLE (Ẩn)"; break;
+                    case View.GONE: visibility = "GONE (Ẩn hoàn toàn)"; break;
+                }
+                
+                sb.append("  └── ").append(name).append(" [").append(visibility).append("]");
+                
+                if (child instanceof ViewStub) {
+                    sb.append(" ✅ (Stub nhẹ)");
+                } else if (name.contains("CardView") || name.contains("LinearLayout")) {
+                    sb.append(" ⚠ (OBJECT NẶNG!)");
+                }
+                sb.append("\n");
+            }
+        }
+        return sb.toString();
     }
 }
