@@ -9,7 +9,6 @@ import android.view.ViewStub;
 import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
@@ -33,7 +32,6 @@ public class ViewStubDemoFragment extends Fragment {
         initializeViews(view);
         setupControls();
         
-        // ĐỂ NÚT HIỆN SẴN (nhưng disable) để người dùng dễ thấy
         btnShowPanel.setVisibility(View.VISIBLE);
         btnShowPanel.setEnabled(false);
         
@@ -64,8 +62,6 @@ public class ViewStubDemoFragment extends Fragment {
         hiddenEagerView = null;
         hiddenStub = null;
         
-        // Reset trạng thái nút
-        btnShowPanel.setVisibility(View.VISIBLE);
         btnShowPanel.setEnabled(false);
         btnShowPanel.setText("Hiện Panel VIP (User Click)");
         btnShowPanel.setAlpha(0.5f); 
@@ -82,38 +78,27 @@ public class ViewStubDemoFragment extends Fragment {
         long startTime = System.nanoTime();
         LayoutInflater inflater = LayoutInflater.from(requireContext());
         
-        try {
-            hiddenEagerView = inflater.inflate(R.layout.heavy_complex_view, contentContainer, false);
-            hiddenEagerView.setVisibility(View.GONE);
-            contentContainer.addView(hiddenEagerView);
+        hiddenEagerView = inflater.inflate(R.layout.heavy_complex_view, contentContainer, false);
+        hiddenEagerView.setVisibility(View.GONE);
+        contentContainer.addView(hiddenEagerView);
+        
+        long inflationTime = (System.nanoTime() - startTime) / 1_000_000;
+        
+        String codeSnippet = 
+            "<include layout=\"@layout/heavy_view\"\n" +
+            "         android:visibility=\"gone\" />";
+        
+        textInflationTime.setText(
+            "CACH CU (GONE)\n" +
+            "Thoi gian khoi dong: " + inflationTime + "ms (Cham)\n\n" +
+            "CODE XML:\n" + codeSnippet + "\n\n" +
+            "HIERARCHY THUC TE:\n" + getHierarchyReport());
             
-            long inflationTime = (System.nanoTime() - startTime) / 1_000_000;
-            
-            String hierarchyReport = getHierarchyReport();
-            
-            // CODE SNIPPET (Clean)
-            String codeSnippet = 
-                "<include layout=\"@layout/heavy_view\"\n" +
-                "         android:visibility=\"gone\" />";
-            
-            textInflationTime.setText(String.format(
-                "[CACH CU: VISIBILITY GONE]\n" +
-                "Thoi gian khoi dong: %dms (Lang phi)\n\n" +
-                "--- CODE XML ---\n%s\n\n" +
-                "--- HIERARCHY THUC TE ---\n%s", 
-                inflationTime, codeSnippet, hierarchyReport));
-                
-            textInflationTime.setTextColor(Color.RED);
-            textInflationTime.setBackgroundColor(Color.parseColor("#FFEBEE"));
-            
-            btnShowPanel.setEnabled(true);
-            btnShowPanel.setAlpha(1.0f);
-            Toast.makeText(getContext(), "Đã xong Bước 1.", Toast.LENGTH_SHORT).show();
-            
-        } catch (Exception e) {
-            textInflationTime.setText("Lỗi: " + e.getMessage());
-            e.printStackTrace();
-        }
+        textInflationTime.setTextColor(Color.RED);
+        textInflationTime.setBackgroundColor(Color.parseColor("#FFEBEE"));
+        
+        btnShowPanel.setEnabled(true);
+        btnShowPanel.setAlpha(1.0f);
     }
     
     private void setupLazy() {
@@ -128,65 +113,54 @@ public class ViewStubDemoFragment extends Fragment {
         
         long inflationTime = (System.nanoTime() - startTime) / 1_000_000;
         
-        String hierarchyReport = getHierarchyReport();
-        
-        // CODE SNIPPET (Clean)
         String codeSnippet = 
             "<ViewStub android:id=\"@+id/stub\"\n" +
             "          android:layout=\"@layout/heavy_view\" />";
         
-        textInflationTime.setText(String.format(
-            "[CACH MOI: VIEWSTUB]\n" +
-            "Thoi gian khoi dong: %dms (Toi uu)\n\n" +
-            "--- CODE XML ---\n%s\n\n" +
-            "--- HIERARCHY THUC TE ---\n%s", 
-            inflationTime, codeSnippet, hierarchyReport));
+        textInflationTime.setText(
+            "CACH MOI (VIEWSTUB)\n" +
+            "Thoi gian khoi dong: " + inflationTime + "ms (Nhanh)\n\n" +
+            "CODE XML:\n" + codeSnippet + "\n\n" +
+            "HIERARCHY THUC TE:\n" + getHierarchyReport());
             
         textInflationTime.setTextColor(Color.parseColor("#2E7D32"));
         textInflationTime.setBackgroundColor(Color.parseColor("#E8F5E9"));
         
         btnShowPanel.setEnabled(true);
         btnShowPanel.setAlpha(1.0f);
-        Toast.makeText(getContext(), "Đã xong Bước 1.", Toast.LENGTH_SHORT).show();
     }
     
     private void showPanel() {
         long startTime = System.nanoTime();
-        try {
-            if (isEagerMode) {
-                if (hiddenEagerView != null) {
-                    hiddenEagerView.setVisibility(View.VISIBLE);
-                }
-            } else {
-                if (hiddenStub != null && hiddenStub.getParent() != null) {
-                    hiddenStub.inflate();
-                }
+        
+        if (isEagerMode) {
+            if (hiddenEagerView != null) {
+                hiddenEagerView.setVisibility(View.VISIBLE);
             }
-            long showTime = (System.nanoTime() - startTime) / 1_000_000;
-            String mode = isEagerMode ? "CACH CU" : "VIEWSTUB";
-            
-            String hierarchyReport = getHierarchyReport();
-            
-            textInflationTime.setText("[TRANG THAI: DA HIEN - " + mode + "]\n" +
-                                      "Thoi gian hien: " + showTime + "ms\n\n" +
-                                      "--- HIERARCHY SAU KHI HIEN ---\n" +
-                                      hierarchyReport);
-            
-            btnShowPanel.setText("Đã hiển thị");
-            btnShowPanel.setEnabled(false);
-            btnShowPanel.setAlpha(0.5f);
-        } catch (Exception e) {
-            Toast.makeText(getContext(), "Lỗi: " + e.getMessage(), Toast.LENGTH_LONG).show();
+        } else {
+            if (hiddenStub != null && hiddenStub.getParent() != null) {
+                hiddenStub.inflate();
+            }
         }
+        long showTime = (System.nanoTime() - startTime) / 1_000_000;
+        String mode = isEagerMode ? "CACH CU" : "VIEWSTUB";
+        
+        textInflationTime.setText("DA HIEN (" + mode + ")\n" +
+                                  "Thoi gian hien: " + showTime + "ms\n\n" +
+                                  "HIERARCHY SAU KHI HIEN:\n" +
+                                  getHierarchyReport());
+        
+        btnShowPanel.setText("Đã hiển thị");
+        btnShowPanel.setEnabled(false);
+        btnShowPanel.setAlpha(0.5f);
     }
     
     private String getHierarchyReport() {
         StringBuilder sb = new StringBuilder();
-        sb.append("Container\n");
         
         if (contentContainer != null) {
             int count = contentContainer.getChildCount();
-            if (count == 0) sb.append("  (Trong)\n");
+            if (count == 0) sb.append("(Trong)\n");
             
             for (int i = 0; i < count; i++) {
                 View child = contentContainer.getChildAt(i);
@@ -198,7 +172,7 @@ public class ViewStubDemoFragment extends Fragment {
                     case View.GONE: visibility = "GONE"; break;
                 }
                 
-                sb.append("  +-- ").append(name).append(" [").append(visibility).append("]");
+                sb.append("- ").append(name).append(" [").append(visibility).append("]");
                 
                 if (child instanceof ViewStub) {
                     sb.append(" (NHE)");
