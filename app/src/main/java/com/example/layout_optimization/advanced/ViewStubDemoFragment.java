@@ -45,7 +45,6 @@ public class ViewStubDemoFragment extends Fragment {
     }
     
     private void loadEagerly() {
-        // Ensure ViewStub wasn't already inflated
         if (heavyViewStub == null && inflatedView != null) {
             Toast.makeText(getContext(), "Resetting view for demo...", Toast.LENGTH_SHORT).show();
             ViewGroup container = (ViewGroup) getView().findViewById(R.id.container);
@@ -53,21 +52,14 @@ public class ViewStubDemoFragment extends Fragment {
             inflatedView = null;
         }
 
-        // Simulate eager loading without ViewStub
         long startTime = System.nanoTime();
-        
         LayoutInflater inflater = LayoutInflater.from(requireContext());
         ViewGroup container = (ViewGroup) getView().findViewById(R.id.container);
-        
-        // Remove ViewStub if it exists to simulate "it was never there, just direct view"
-        // But for this demo logic, we just inflate into container
-        
         View heavyView = inflater.inflate(R.layout.heavy_complex_view, container, true);
-        
         long inflationTime = (System.nanoTime() - startTime) / 1_000_000;
         
         textInflationTime.setText(String.format(
-            "⏱️ Eager Load (No ViewStub): %dms\n" +
+            "Eager Load (No ViewStub): %dms\n" +
             "Impact: Loaded immediately, delays startup", 
             inflationTime));
         textInflationTime.setTextColor(Color.RED);
@@ -79,16 +71,13 @@ public class ViewStubDemoFragment extends Fragment {
             return;
         }
         
-        // Lazy load with ViewStub
         long startTime = System.nanoTime();
-        
         inflatedView = heavyViewStub.inflate();
-        heavyViewStub = null; // Can only inflate once
-        
+        heavyViewStub = null; 
         long inflationTime = (System.nanoTime() - startTime) / 1_000_000;
         
         textInflationTime.setText(String.format(
-            "⏱️ Lazy Load (ViewStub): %dms\n" +
+            "Lazy Load (ViewStub): %dms\n" +
             "Impact: Loaded on-demand, faster startup\n" +
             "Savings: Only loaded when needed", 
             inflationTime));

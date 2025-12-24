@@ -3,17 +3,13 @@
     <item
         android:id="@+id/nav_comparison"
         android:icon="@android:drawable/ic_menu_sort_by_size"
-        android:title="Comparison" />
-    <item
-        android:id="@+id/nav_metrics"
-        android:icon="@android:drawable/ic_menu_rotate"
-        android:title="Metrics" />
+        android:title="So sánh" />
     <item
         android:id="@+id/nav_profiler"
-        android:icon="@android:drawable/ic_menu_search"
+        android:icon="@android:drawable/ic_menu_manage"
         android:title="Profiler" />
     <item
         android:id="@+id/nav_report"
         android:icon="@android:drawable/ic_menu_info_details"
-        android:title="Report" />
+        android:title="Báo cáo" />
 </menu>

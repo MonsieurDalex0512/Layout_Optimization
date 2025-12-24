@@ -6,6 +6,17 @@
     android:orientation="vertical"
     android:padding="8dp">
 
+    <!-- Button text changed -->
+    <Button
+        android:id="@+id/btn_open_advanced"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Lựa chọn khác"
+        android:backgroundTint="#FF9800"
+        android:textColor="#FFFFFF"
+        android:textStyle="bold"
+        android:layout_marginBottom="8dp"/>
+
     <!-- Control Panel -->
     <androidx.cardview.widget.CardView
         android:layout_width="match_parent"
@@ -39,11 +50,110 @@
                 android:id="@+id/btn_measure"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="📏 Đo ngay"/>
+                android:text="Đo ngay"/>
         </LinearLayout>
     </androidx.cardview.widget.CardView>
     
-    <!-- Live Metrics Display -->
+    <!-- NEW: Real-time Performance Card (Replacing Metrics Tab) -->
+    <androidx.cardview.widget.CardView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="8dp"
+        app:cardCornerRadius="8dp"
+        app:cardElevation="4dp"
+        app:cardBackgroundColor="#E3F2FD"> 
+        
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="12dp">
+            
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Hiệu năng Thực tế (Realtime)"
+                android:textStyle="bold"
+                android:textColor="#1565C0"
+                android:layout_marginBottom="8dp"/>
+                
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+                
+                <!-- FPS -->
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical"
+                    android:gravity="center">
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="FPS"
+                        android:textSize="12sp"
+                        android:textColor="#666"/>
+                    <TextView
+                        android:id="@+id/rt_fps"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="--"
+                        android:textSize="20sp"
+                        android:textStyle="bold"
+                        android:textColor="#4CAF50"/>
+                </LinearLayout>
+
+                <!-- Frame Time -->
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical"
+                    android:gravity="center">
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Avg Frame Time"
+                        android:textSize="12sp"
+                        android:textColor="#666"/>
+                    <TextView
+                        android:id="@+id/rt_frame_time"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="--"
+                        android:textSize="20sp"
+                        android:textStyle="bold"/>
+                </LinearLayout>
+
+                <!-- Jank -->
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical"
+                    android:gravity="center">
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Jank"
+                        android:textSize="12sp"
+                        android:textColor="#666"/>
+                    <TextView
+                        android:id="@+id/rt_jank"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="--"
+                        android:textSize="20sp"
+                        android:textStyle="bold"
+                        android:textColor="#F44336"/>
+                </LinearLayout>
+            </LinearLayout>
+        </LinearLayout>
+    </androidx.cardview.widget.CardView>
+    
+    <!-- Static Metrics Display -->
     <androidx.cardview.widget.CardView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"

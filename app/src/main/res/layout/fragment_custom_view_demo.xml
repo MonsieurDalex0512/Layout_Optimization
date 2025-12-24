@@ -1,21 +1,97 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:padding="16dp">
-    
-    <TextView 
-        android:text="Custom View Demo" 
-        android:textSize="20sp" 
-        android:textStyle="bold"
-        android:layout_marginBottom="16dp"
-        android:layout_width="wrap_content" 
-        android:layout_height="wrap_content"/>
+    android:layout_height="match_parent">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Demo: Custom View"
+            android:textSize="24sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="8dp"/>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="So sánh giữa việc ghép nhiều View (XML) và tự vẽ mọi thứ bằng code (Custom View)."
+            android:layout_marginBottom="24dp"/>
+
+        <!-- XML LAYOUT -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="1. Layout XML thông thường"
+            android:textStyle="bold"
+            android:layout_marginBottom="8dp"/>
+
+        <LinearLayout
+            android:id="@+id/container_xml_layout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_marginBottom="8dp">
+            
+            <include layout="@layout/item_user_xml"/>
+            
+        </LinearLayout>
         
-    <TextView 
-        android:text="Custom Views can optimize layout performance by combining measure/draw steps and reducing hierarchy." 
-        android:layout_width="wrap_content" 
-        android:layout_height="wrap_content"/>
+        <TextView
+            android:id="@+id/text_result_xml"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:fontFamily="monospace"
+            android:text="Phân tích: ..."
+            android:textSize="12sp"
+            android:padding="8dp"
+            android:background="#FFEBEE"
+            android:layout_marginBottom="24dp"/>
+
+        <!-- CUSTOM VIEW -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="2. Custom View (Tự vẽ)"
+            android:textStyle="bold"
+            android:layout_marginBottom="8dp"/>
+
+        <LinearLayout
+            android:id="@+id/container_custom_view"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="8dp"
+            android:background="#E8F5E9"
+            android:layout_marginBottom="8dp">
+            
+            <com.example.layout_optimization.views.UserCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"/>
+            
+        </LinearLayout>
         
-</LinearLayout>
+        <TextView
+            android:id="@+id/text_result_custom"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:fontFamily="monospace"
+            android:text="Phân tích: ..."
+            android:textSize="12sp"
+            android:padding="8dp"
+            android:background="#E8F5E9"
+            android:layout_marginBottom="16dp"/>
+            
+        <Button
+            android:id="@+id/btn_analyze_custom"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="🔍 So sánh hiệu quả"/>
+
+    </LinearLayout>
+</ScrollView>

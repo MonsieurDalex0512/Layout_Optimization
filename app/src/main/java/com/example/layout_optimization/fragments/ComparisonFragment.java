@@ -1,5 +1,6 @@
 package com.example.layout_optimization.fragments;
 
+import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -8,8 +9,10 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.PopupMenu;
 import android.widget.Switch;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -18,10 +21,12 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.layout_optimization.R;
+import com.example.layout_optimization.advanced.MergeTagDemoFragment;
+import com.example.layout_optimization.advanced.ViewStubDemoFragment;
 import com.example.layout_optimization.adapters.OptimizedAdapter;
 import com.example.layout_optimization.adapters.UnoptimizedAdapter;
 import com.example.layout_optimization.models.Item;
-import com.example.layout_optimization.utils.FPSMeter;
+import com.example.layout_optimization.models.PerformanceMetrics;
 import com.example.layout_optimization.utils.LayoutAnalyzer;
 import com.example.layout_optimization.utils.PerformanceMonitor;
 import com.example.layout_optimization.views.MetricCard;
@@ -33,6 +38,7 @@ public class ComparisonFragment extends Fragment {
     private RecyclerView recyclerView;
     private Switch switchOptimize;
     private Button btnMeasure;
+    private Button btnAdvanced; // New Button
     private UnoptimizedAdapter unoptimizedAdapter;
     private OptimizedAdapter optimizedAdapter;
     
@@ -41,9 +47,13 @@ public class ComparisonFragment extends Fragment {
     private MetricCard metricMeasure, metricLayout, metricDraw;
     private TextView textAnalysis;
     
+    // Realtime Metrics Views
+    private TextView rtFps, rtFrameTime, rtJank;
+    private Handler updateHandler;
+    private Runnable updateRunnable;
+    
     private PerformanceMonitor monitor;
     private LayoutAnalyzer analyzer;
-    private FPSMeter fpsMeter;
     
     private List<Item> dummyItems;
     
@@ -53,7 +63,6 @@ public class ComparisonFragment extends Fragment {
         
         // Initialize tools
         analyzer = new LayoutAnalyzer();
-        fpsMeter = new FPSMeter();
         monitor = PerformanceMonitor.getInstance();
         
         // Setup data
@@ -66,6 +75,12 @@ public class ComparisonFragment extends Fragment {
         switchOptimize = view.findViewById(R.id.switch_optimize);
         btnMeasure = view.findViewById(R.id.btn_measure);
         textAnalysis = view.findViewById(R.id.text_analysis);
+        btnAdvanced = view.findViewById(R.id.btn_open_advanced);
+        
+        // Realtime Metrics Views
+        rtFps = view.findViewById(R.id.rt_fps);
+        rtFrameTime = view.findViewById(R.id.rt_frame_time);
+        rtJank = view.findViewById(R.id.rt_jank);
         
         // Metric Cards
         metricInflation = view.findViewById(R.id.metric_inflation);
@@ -87,13 +102,17 @@ public class ComparisonFragment extends Fragment {
             switchAdapter(isOptimized);
         });
         
+        // --- HANDLE ADVANCED MENU BUTTON CLICK ---
+        btnAdvanced.setOnClickListener(this::showAdvancedMenu);
+        // -----------------------------------------
+        
+        // Setup Realtime Polling Loop
+        setupRealtimeUpdates();
+        
         // Initial load check
         if (savedInstanceState == null) {
-            // Default to Unoptimized initially if fresh start
-            // Or respect current switch state if view recreated
             boolean current = switchOptimize.isChecked();
             switchOptimize.setText(current ? "Đã tối ưu" : "Chưa tối ưu");
-            // Set session mode initially
             monitor.setSessionMode(current ? "ĐÃ TỐI ƯU" : "CHƯA TỐI ƯU");
             switchAdapter(current);
         }
@@ -101,13 +120,75 @@ public class ComparisonFragment extends Fragment {
         return view;
     }
     
+    private void setupRealtimeUpdates() {
+        updateHandler = new Handler(Looper.getMainLooper());
+        updateRunnable = new Runnable() {
+            @Override
+            public void run() {
+                updateRealtimeMetrics();
+                updateHandler.postDelayed(this, 200); // Update every 200ms for responsiveness
+            }
+        };
+    }
+    
+    private void updateRealtimeMetrics() {
+        if (!isAdded()) return;
+        // DEFENSIVE CHECK: Ensure everything is ready
+        if (monitor == null || rtFps == null || rtFrameTime == null || rtJank == null) return;
+        
+        PerformanceMetrics metrics = monitor.getMetrics();
+        if (metrics == null) return;
+        
+        // Update FPS
+        float fps = metrics.getFps();
+        rtFps.setText(String.format("%.0f", fps));
+        if (fps >= 55) rtFps.setTextColor(Color.parseColor("#4CAF50")); // Green
+        else if (fps >= 40) rtFps.setTextColor(Color.parseColor("#FFA500")); // Orange
+        else rtFps.setTextColor(Color.parseColor("#F44336")); // Red
+        
+        // Update Frame Time
+        float frameTime = metrics.getAvgFrameTime();
+        rtFrameTime.setText(String.format("%.1f ms", frameTime));
+        
+        // Update Jank
+        int jank = metrics.getJankCount();
+        rtJank.setText(String.format("%d", jank));
+        if (jank > 0) rtJank.setTextColor(Color.parseColor("#F44336"));
+        else rtJank.setTextColor(Color.parseColor("#4CAF50"));
+    }
+    
+    private void showAdvancedMenu(View v) {
+        PopupMenu popup = new PopupMenu(getContext(), v);
+        popup.getMenuInflater().inflate(R.menu.menu_main, popup.getMenu());
+        popup.setOnMenuItemClickListener(item -> {
+            Fragment demoFragment = null;
+            int id = item.getItemId();
+            
+            if (id == R.id.action_viewstub) {
+                 demoFragment = new ViewStubDemoFragment();
+            } else if (id == R.id.action_merge) {
+                 demoFragment = new MergeTagDemoFragment();
+            }
+            
+            if (demoFragment != null) {
+                getParentFragmentManager().beginTransaction()
+                    .replace(R.id.fragment_container, demoFragment)
+                    .addToBackStack(null)
+                    .commit();
+                return true;
+            }
+            return false;
+        });
+        popup.show();
+    }
+    
     private List<Item> createDummyItems() {
         List<Item> items = new ArrayList<>();
-        for (int i = 0; i < 50; i++) {
+        for (int i = 0; i < 1000; i++) {
             items.add(new Item(
                 "Mục #" + i,
-                "Đây là một đoạn mô tả dài buộc layout phải đo lường nhiều lần khi sử dụng weight trong LinearLayout. Nó giúp minh họa sự khác biệt về hiệu năng.",
-                android.R.drawable.ic_menu_gallery,
+                "Mô tả dài để test hiệu năng measure layout. Layout chưa tối ưu sẽ bị lag khi scroll nhanh danh sách này.",
+                0, // Đã xóa icon (thay bằng 0)
                 "Vừa xong"
             ));
         }
@@ -115,17 +196,29 @@ public class ComparisonFragment extends Fragment {
     }
     
     private void switchAdapter(boolean optimized) {
-        // Cập nhật text của Switch
-        switchOptimize.setText(optimized ? "Đã tối ưu" : "Chưa tối ưu");
+        monitor.stopTracking(); 
 
-        // Cập nhật Session Mode cho Monitor
+        switchOptimize.setText(optimized ? "Đã tối ưu" : "Chưa tối ưu");
         String modeName = optimized ? "ĐÃ TỐI ƯU" : "CHƯA TỐI ƯU";
+        
+        monitor.reset();
         monitor.setSessionMode(modeName);
 
-        // Clear RecyclerView
         recyclerView.setAdapter(null);
         
-        // Measure inflation time
+        // Setup Scroll Listener để chỉ đo khi cuộn
+        recyclerView.clearOnScrollListeners();
+        recyclerView.addOnScrollListener(new RecyclerView.OnScrollListener() {
+            @Override
+            public void onScrollStateChanged(@NonNull RecyclerView recyclerView, int newState) {
+                if (newState == RecyclerView.SCROLL_STATE_IDLE) {
+                    monitor.stopTracking();
+                } else {
+                    monitor.startTracking();
+                }
+            }
+        });
+        
         long startTime = System.nanoTime();
         
         if (optimized) {
@@ -138,84 +231,72 @@ public class ComparisonFragment extends Fragment {
         
         long inflationTime = (System.nanoTime() - startTime) / 1_000_000;
         
-        // Update metrics
         updateMetrics(optimized, inflationTime);
-        
-        // Start performance monitoring
-        startPerformanceTracking();
     }
     
     private void updateMetrics(boolean optimized, long inflationTime) {
-        // We need to wait for layout to happen to get a ViewHolder
         recyclerView.post(() -> {
             RecyclerView.ViewHolder holder = recyclerView.findViewHolderForAdapterPosition(0);
             if (holder != null) {
                 View itemView = holder.itemView;
-                
-                // Count views recursively
                 int viewCount = analyzer.countViews(itemView);
-                
-                // Measure hierarchy depth
                 int depth = analyzer.measureDepth(itemView);
-                
-                // Measure layout passes (custom measurement)
                 int measurePasses = analyzer.countMeasurePasses(itemView);
                 
-                // Estimate overdraw
+                // BENCHMARK THỰC TẾ (Real Benchmark)
+                float avgLayoutTime = benchmarkMeasureLayout(itemView);
                 int overdraw = analyzer.estimateOverdraw(itemView);
                 
-                // Update UI
                 metricInflation.setValue(inflationTime + "ms");
                 metricViewCount.setValue(String.valueOf(viewCount));
                 metricDepth.setValue(depth + " cấp");
                 metricMeasure.setValue(measurePasses + " lần");
                 
-                // For layout and draw time, we'd typically need FrameMetrics, but here we can simulate/estimate 
-                // or just leave as "--" until we hook up deeper profiling. 
-                // Let's use estimated values based on complexity for demo purposes if real metrics aren't hooked up yet.
-                // In a real app, FrameMetricsAggregator would be used.
+                // Cập nhật số liệu thực
+                metricLayout.setTitle("T.gian Layout (Avg)");
+                metricLayout.setValue(String.format("%.2f ms", avgLayoutTime));
                 
-                metricLayout.setValue(optimized ? "~2ms" : "~8ms");
-                metricDraw.setValue(optimized ? "~3ms" : "~12ms"); // Higher due to overdraw
+                // Thay thế Draw Time bằng Overdraw Score
+                metricDraw.setTitle("Điểm Overdraw");
+                metricDraw.setValue(overdraw + "x");
             }
         });
     }
     
-    private void startPerformanceTracking() {
-        // Track scroll performance
-        recyclerView.clearOnScrollListeners();
-        recyclerView.addOnScrollListener(new RecyclerView.OnScrollListener() {
-            @Override
-            public void onScrolled(@NonNull RecyclerView rv, int dx, int dy) {
-                // Measure frame time
-                fpsMeter.recordFrame();
-                
-                // Update real-time FPS
-                float currentFPS = fpsMeter.getCurrentFPS();
-                
-                // Detect jank (frame drops)
-                if (currentFPS < 55) {
-                    // Log jank event
-                    monitor.recordJank();
-                }
-                
-                // Update Activity title or subtitle with FPS if possible, or just log
-                if (getActivity() != null && dx != 0 || dy != 0) { // Only update if actually scrolling
-                   // Maybe update a text view in the activity if exposed
-                }
-            }
-        });
+    // Hàm benchmark thực tế: Chạy Measure/Layout 50 lần để lấy trung bình
+    private float benchmarkMeasureLayout(View view) {
+        long totalTime = 0;
+        int iterations = 50;
+        
+        // Giả lập specs như trong RecyclerView (Width cố định, Height wrap)
+        int widthSpec = View.MeasureSpec.makeMeasureSpec(recyclerView.getWidth(), View.MeasureSpec.EXACTLY);
+        int heightSpec = View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED);
+        
+        for (int i = 0; i < iterations; i++) {
+            view.forceLayout(); // Bắt buộc layout lại
+            long start = System.nanoTime();
+            view.measure(widthSpec, heightSpec);
+            view.layout(0, 0, view.getMeasuredWidth(), view.getMeasuredHeight());
+            totalTime += (System.nanoTime() - start);
+        }
+        
+        // Trả về trung bình (ms)
+        return (totalTime / (float)iterations) / 1_000_000f;
     }
     
     @Override
     public void onResume() {
         super.onResume();
-        monitor.startTracking();
+        if (updateHandler != null) {
+            updateHandler.post(updateRunnable);
+        }
     }
-    
+
     @Override
     public void onPause() {
         super.onPause();
-        monitor.stopTracking();
+        if (updateHandler != null) {
+            updateHandler.removeCallbacks(updateRunnable);
+        }
     }
 }

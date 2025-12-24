@@ -82,18 +82,26 @@ public class PerformanceMonitor {
                 
                 if (lastFrameTime != 0) {
                     long frameTime = frameTimeNanos - lastFrameTime;
-                    frameTimesNanos.add(frameTime);
-                    totalFrames++;
-                    
-                    float frameTimeMs = frameTime / 1_000_000f;
-                    if (frameTimeMs > 16.67f) {
-                        jankCount++;
-                    }
-                    
-                    if (totalFrames % 10 == 0 && listener != null) {
-                        float fps = calculateFPS();
-                        float avgFrameTime = calculateAvgFrameTime();
-                        listener.onMetricsUpdated(fps, jankCount, avgFrameTime);
+                    // Lọc frame time không hợp lệ (lớn hơn 500ms coi như pause/resume)
+                    if (frameTime < 500_000_000) { 
+                        frameTimesNanos.add(frameTime);
+                        totalFrames++;
+                        
+                        float frameTimeMs = frameTime / 1_000_000f;
+                        if (frameTimeMs > 16.67f) {
+                            jankCount++;
+                        }
+                        
+                        if (totalFrames % 10 == 0 && listener != null) {
+                            float fps = calculateFPS();
+                            float avgFrameTime = calculateAvgFrameTime();
+                            listener.onMetricsUpdated(fps, jankCount, avgFrameTime);
+                        }
+                    } else {
+                        // Reset lastFrameTime if gap is too big to avoid skewed stats
+                        lastFrameTime = frameTimeNanos;
+                        choreographer.postFrameCallback(this);
+                        return;
                     }
                 }
                 
@@ -120,34 +128,46 @@ public class PerformanceMonitor {
         jankCount = 0;
         totalFrames = 0;
         frameTimesNanos.clear();
+        // Reset luôn listener để UI cập nhật về 0 ngay
+        if (listener != null) {
+             listener.onMetricsUpdated(0, 0, 0);
+        }
     }
     
     private float calculateFPS() {
-        if (frameTimesNanos.isEmpty()) return 60.0f;
+        if (frameTimesNanos.isEmpty()) return 60.0f; // Default ideal
+        
+        // Calculate based on recent window (e.g. last 60 frames ~ 1 sec)
         int windowSize = Math.min(frameTimesNanos.size(), 60);
         long totalTimeNs = 0;
         for (int i = 0; i < windowSize; i++) {
             totalTimeNs += frameTimesNanos.get(frameTimesNanos.size() - 1 - i);
         }
+        
+        if (totalTimeNs == 0) return 60.0f;
+
         float avgFrameTimeSec = (totalTimeNs / (float)windowSize) / 1_000_000_000f;
         if (avgFrameTimeSec == 0) return 60.0f;
+        
         return 1.0f / avgFrameTimeSec;
     }
     
     private float calculateAvgFrameTime() {
         if (frameTimesNanos.isEmpty()) return 0;
+        
         long sum = 0;
-        int windowSize = Math.min(frameTimesNanos.size(), 100);
+        int windowSize = Math.min(frameTimesNanos.size(), 100); // Last 100 frames avg
         for (int i = 0; i < windowSize; i++) {
             sum += frameTimesNanos.get(frameTimesNanos.size() - 1 - i);
         }
-        return (sum / (float)windowSize) / 1_000_000f;
+        return (sum / (float)windowSize) / 1_000_000f; // Convert to ms
     }
     
     public PerformanceMetrics getMetrics() {
         float fps = calculateFPS();
         float avgFrameTime = calculateAvgFrameTime();
         float jankPercentage = (totalFrames > 0) ? (jankCount * 100f / totalFrames) : 0;
+        
         return new PerformanceMetrics(fps, avgFrameTime, jankCount, jankPercentage, totalFrames);
     }
     

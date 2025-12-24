@@ -82,7 +82,7 @@ public class ProfilerFragment extends Fragment {
                 // Method tracing
                 Debug.startMethodTracing("layout_optimization_trace");
                 isTracing = true;
-                textTraceStatus.setText("🔴 Đang ghi...");
+                textTraceStatus.setText("Đang ghi...");
                 textTraceStatus.setTextColor(Color.RED);
                 btnStartTrace.setEnabled(false);
                 btnStopTrace.setEnabled(true);
@@ -102,7 +102,7 @@ public class ProfilerFragment extends Fragment {
             try {
                 Debug.stopMethodTracing();
                 isTracing = false;
-                textTraceStatus.setText("⚫ Không ghi");
+                textTraceStatus.setText("Không ghi");
                 textTraceStatus.setTextColor(Color.GRAY);
                 btnStartTrace.setEnabled(true);
                 btnStopTrace.setEnabled(false);
@@ -129,8 +129,6 @@ public class ProfilerFragment extends Fragment {
         
         // Measure inflation time
         long startTime = System.nanoTime();
-        // Passing null as parent but false for attachToRoot to simulate inflation without adding to view hierarchy yet
-        // Ideally we should pass a parent to get correct LayoutParams, but for pure analysis of structure this works.
         View itemView = inflater.inflate(layoutId, null, false);
         long inflationTime = (System.nanoTime() - startTime) / 1_000_000;
         
@@ -143,7 +141,7 @@ public class ProfilerFragment extends Fragment {
         
         // Display results
         StringBuilder results = new StringBuilder();
-        results.append("═══ KẾT QUẢ PHÂN TÍCH ═══\n\n");
+        results.append("KẾT QUẢ PHÂN TÍCH\n\n");
         results.append(String.format("Layout: %s\n", isOptimized ? "ĐÃ TỐI ƯU" : "CHƯA TỐI ƯU"));
         results.append(String.format("Thời gian Inflation: %dms\n", inflationTime));
         results.append(String.format("Số lượng View: %d\n", viewCount));
@@ -151,7 +149,7 @@ public class ProfilerFragment extends Fragment {
         results.append(String.format("Số lần Measure: %d\n", measurePasses));
         results.append(String.format("Overdraw ước tính: %dx\n\n", overdraw));
         
-        results.append("═══ CÂY HIERARCHY ═══\n");
+        results.append("CÂY HIERARCHY\n");
         results.append(hierarchy);
         
         textHierarchyAnalysis.setText(results.toString());

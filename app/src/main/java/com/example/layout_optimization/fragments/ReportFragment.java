@@ -55,14 +55,10 @@ public class ReportFragment extends Fragment {
     }
     
     private void generateReport() {
-        // Show loading
         textComparisonReport.setText("Đang tạo báo cáo tổng hợp...");
         
-        // Run analysis on background thread
         new Thread(() -> {
             String report = performComparativeAnalysis();
-            
-            // Update UI on main thread
             if (getActivity() != null) {
                 getActivity().runOnUiThread(() -> {
                     textComparisonReport.setText(report);
@@ -76,11 +72,9 @@ public class ReportFragment extends Fragment {
 
         StringBuilder report = new StringBuilder();
         
-        report.append("╔═══════════════════════════════════════════════╗\n");
-        report.append("║   BÁO CÁO SO SÁNH TỐI ƯU HÓA LAYOUT           ║\n");
-        report.append("╚═══════════════════════════════════════════════╝\n\n");
+        report.append("BÁO CÁO SO SÁNH TỐI ƯU HÓA LAYOUT\n");
+        report.append("-----------------------------------\n\n");
         
-        // Analyze both layouts
         LayoutInflater inflater = LayoutInflater.from(getContext());
         
         // UNOPTIMIZED
@@ -104,75 +98,66 @@ public class ReportFragment extends Fragment {
         int optOverdraw = analyzer.estimateOverdraw(optView);
         
         // METRICS TABLE
-        report.append("┌─────────────────────────┬──────────────┬──────────────┬─────────────┐\n");
-        report.append("│ Metric                  │ Chưa tối ưu  │ Đã tối ưu    │ Cải thiện   │\n");
-        report.append("├─────────────────────────┼──────────────┼──────────────┼─────────────┤\n");
-        
         // Inflation Time
         float inflationImprovement = unoptInflationTime > 0 ? ((unoptInflationTime - optInflationTime) * 100f / unoptInflationTime) : 0;
-        report.append(String.format("│ Thời gian Inflation     │ %10dms │ %10dms │ %10.1f%% │\n", 
+        report.append(String.format("- Thời gian Inflation: %dms (Chưa tối ưu) vs %dms (Đã tối ưu) -> Cải thiện: %.1f%%\n", 
             unoptInflationTime, optInflationTime, inflationImprovement));
         
         // View Count
         float viewCountReduction = ((unoptViewCount - optViewCount) * 100f / unoptViewCount);
-        report.append(String.format("│ Số lượng View           │ %12d │ %12d │ %10.1f%% │\n",
+        report.append(String.format("- Số lượng View: %d vs %d -> Cải thiện: %.1f%%\n",
             unoptViewCount, optViewCount, viewCountReduction));
         
         // Hierarchy Depth
         float depthReduction = ((unoptDepth - optDepth) * 100f / unoptDepth);
-        report.append(String.format("│ Độ sâu Hierarchy        │ %9d cấp │ %9d cấp │ %10.1f%% │\n",
+        report.append(String.format("- Độ sâu Hierarchy: %d cấp vs %d cấp -> Cải thiện: %.1f%%\n",
             unoptDepth, optDepth, depthReduction));
         
         // Measure Passes
         float measureReduction = ((unoptMeasurePasses - optMeasurePasses) * 100f / unoptMeasurePasses);
-        report.append(String.format("│ Số lần Measure          │ %12d │ %12d │ %10.1f%% │\n",
+        report.append(String.format("- Số lần Measure: %d vs %d -> Cải thiện: %.1f%%\n",
             unoptMeasurePasses, optMeasurePasses, measureReduction));
         
         // Overdraw
         float overdrawReduction = ((unoptOverdraw - optOverdraw) * 100f / unoptOverdraw);
-        report.append(String.format("│ Các lớp Overdraw        │ %11dx │ %11dx │ %10.1f%% │\n",
+        report.append(String.format("- Các lớp Overdraw: %dx vs %dx -> Cải thiện: %.1f%%\n\n",
             unoptOverdraw, optOverdraw, overdrawReduction));
         
-        report.append("└─────────────────────────┴──────────────┴──────────────┴─────────────┘\n\n");
-        
         // IMPACT ANALYSIS
-        report.append("═══ PHÂN TÍCH TÁC ĐỘNG HIỆU NĂNG ═══\n\n");
+        report.append("PHÂN TÍCH TÁC ĐỘNG HIỆU NĂNG\n\n");
         
-        report.append("🎯 THỜI GIAN INFLATION:\n");
-        report.append(String.format("   Giảm: %dms → %dms (nhanh hơn %.1f%%)\n",
+        report.append("THỜI GIAN INFLATION:\n");
+        report.append(String.format("   Giảm: %dms -> %dms (nhanh hơn %.1f%%)\n",
             unoptInflationTime, optInflationTime, inflationImprovement));
         report.append(String.format("   Tác động: Với RecyclerView chứa 50 items, tiết kiệm ~%.0fms khi tải lần đầu\n\n",
             (unoptInflationTime - optInflationTime) * 50 / 1000f));
         
-        report.append("📊 SỐ LƯỢNG VIEW:\n");
-        report.append(String.format("   Giảm: %d → %d views (ít hơn %.1f%% objects)\n",
+        report.append("SỐ LƯỢNG VIEW:\n");
+        report.append(String.format("   Giảm: %d -> %d views (ít hơn %.1f%% objects)\n",
             unoptViewCount, optViewCount, viewCountReduction));
         report.append(String.format("   Tác động: Giảm sử dụng bộ nhớ và duyệt cây nhanh hơn\n\n"));
         
-        report.append("🌲 ĐỘ SÂU HIERARCHY:\n");
-        report.append(String.format("   Giảm: %d → %d cấp (nông hơn %.1f%%)\n",
+        report.append("ĐỘ SÂU HIERARCHY:\n");
+        report.append(String.format("   Giảm: %d -> %d cấp (nông hơn %.1f%%)\n",
             unoptDepth, optDepth, depthReduction));
         report.append("   Tác động: Measure/layout passes nhanh hơn theo cấp số nhân\n\n");
         
-        report.append("📏 SỐ LẦN MEASURE:\n");
-        report.append(String.format("   Giảm: %d → %d lần (ít hơn %.1f%%)\n",
+        report.append("SỐ LẦN MEASURE:\n");
+        report.append(String.format("   Giảm: %d -> %d lần (ít hơn %.1f%%)\n",
             unoptMeasurePasses, optMeasurePasses, measureReduction));
         report.append("   Tác động: Rất quan trọng cho hiệu năng cuộn mượt mà\n\n");
         
-        report.append("🎨 OVERDRAW:\n");
-        report.append(String.format("   Giảm: %dx → %dx (ít hơn %.1f%%)\n",
+        report.append("OVERDRAW:\n");
+        report.append(String.format("   Giảm: %dx -> %dx (ít hơn %.1f%%)\n",
             unoptOverdraw, optOverdraw, overdrawReduction));
         report.append("   Tác động: Giảm băng thông GPU sử dụng\n\n");
         
         // ESTIMATED FPS IMPACT
-        report.append("═══ TÁC ĐỘNG FPS ƯỚC TÍNH ═══\n\n");
+        report.append("TÁC ĐỘNG FPS ƯỚC TÍNH\n\n");
         
-        // Simplified FPS estimation based on frame time
         float unoptFrameTime = unoptInflationTime * 0.3f + unoptMeasurePasses * 2f + unoptOverdraw * 0.5f;
         float optFrameTime = optInflationTime * 0.3f + optMeasurePasses * 2f + optOverdraw * 0.5f;
         
-        // Normalize to some realistic values if synthetic calculation is off
-        // Assume baseline overhead of ~8ms for system
         unoptFrameTime += 8f;
         optFrameTime += 8f;
 
@@ -185,29 +170,29 @@ public class ReportFragment extends Fragment {
         report.append(String.format("  Cải thiện: +%.0f FPS\n\n", optFPS - unoptFPS));
         
         // RECOMMENDATIONS
-        report.append("═══ CÁC TỐI ƯU HÓA ĐÃ ÁP DỤNG ═══\n\n");
-        report.append("✓ Thay thế LinearLayouts lồng nhau bằng ConstraintLayout phẳng\n");
-        report.append("✓ Loại bỏ các ViewGroup bao bọc không cần thiết\n");
-        report.append("✓ Loại bỏ background thừa (giảm overdraw)\n");
-        report.append("✓ Tránh dùng weight trong LinearLayout (không đo 2 lần)\n");
-        report.append("✓ Sử dụng constraints trực tiếp thay vì lồng nhau\n\n");
+        report.append("CÁC TỐI ƯU HÓA ĐÃ ÁP DỤNG\n\n");
+        report.append("- Thay thế LinearLayouts lồng nhau bằng ConstraintLayout phẳng\n");
+        report.append("- Loại bỏ các ViewGroup bao bọc không cần thiết\n");
+        report.append("- Loại bỏ background thừa (giảm overdraw)\n");
+        report.append("- Tránh dùng weight trong LinearLayout (không đo 2 lần)\n");
+        report.append("- Sử dụng constraints trực tiếp thay vì lồng nhau\n\n");
         
         // BEST PRACTICES
-        report.append("═══ TỔNG HỢP BEST PRACTICES ═══\n\n");
-        report.append("1. Giữ hierarchy phẳng (lý tưởng ≤3 cấp)\n");
+        report.append("TỔNG HỢP BEST PRACTICES\n\n");
+        report.append("1. Giữ hierarchy phẳng (lý tưởng dưới 3 cấp)\n");
         report.append("2. Sử dụng ConstraintLayout cho layout phức tạp\n");
         report.append("3. Tối thiểu hóa background (giảm overdraw)\n");
         report.append("4. Tránh weight trong LinearLayout khi có thể\n");
-        report.append("5. Sử dụng thẻ <merge> để loại bỏ các lớp bao bọc\n");
+        report.append("5. Sử dụng thẻ merge để loại bỏ các lớp bao bọc\n");
         report.append("6. Sử dụng ViewStub cho các view ẩn hiện có điều kiện\n");
-        report.append("7. Profile với Layout Inspector & GPU Overdraw\n");
-        report.append("8. Mục tiêu frame time <16.67ms cho 60 FPS\n\n");
+        report.append("7. Profile với Layout Inspector và GPU Overdraw\n");
+        report.append("8. Mục tiêu frame time dưới 16.67ms cho 60 FPS\n\n");
         
         // CONCLUSION
-        report.append("═══ KẾT LUẬN ═══\n\n");
+        report.append("KẾT LUẬN\n\n");
         report.append(String.format("Tổng mức cải thiện hiệu năng: %.1f%%\n", 
             (inflationImprovement + viewCountReduction + depthReduction + measureReduction + overdrawReduction) / 5));
-        report.append("Trạng thái: ✅ ĐÃ TỐI ƯU HÓA ĐÁNG KỂ\n");
+        report.append("Trạng thái: ĐÃ TỐI ƯU HÓA ĐÁNG KỂ\n");
         report.append("\nNhững tối ưu hóa này mang lại trải nghiệm cuộn mượt mà hơn,\n");
         report.append("thời gian tải nhanh hơn và tiết kiệm pin hơn.\n");
         
@@ -219,7 +204,6 @@ public class ReportFragment extends Fragment {
         if (getContext() == null) return;
         
         try {
-            // Export to file
             String filename = "layout_optimization_report_" + System.currentTimeMillis() + ".txt";
             File file = new File(requireContext().getExternalFilesDir(null), filename);
             
@@ -231,7 +215,6 @@ public class ReportFragment extends Fragment {
                 "Đã xuất báo cáo ra: " + file.getAbsolutePath(), 
                 Toast.LENGTH_LONG).show();
             
-            // Also copy to clipboard
             ClipboardManager clipboard = (ClipboardManager) 
                 requireContext().getSystemService(Context.CLIPBOARD_SERVICE);
             if (clipboard != null) {

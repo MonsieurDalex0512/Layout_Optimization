@@ -1,21 +1,100 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:padding="16dp">
-    
-    <TextView 
-        android:text="Merge Tag Demo" 
-        android:textSize="20sp" 
-        android:textStyle="bold"
-        android:layout_marginBottom="16dp"
-        android:layout_width="wrap_content" 
-        android:layout_height="wrap_content"/>
+    android:layout_height="match_parent">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Demo: Thẻ &lt;merge&gt;"
+            android:textSize="24sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="8dp"/>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Thẻ merge giúp loại bỏ các ViewGroup container thừa thãi khi sử dụng &lt;include&gt;."
+            android:layout_marginBottom="24dp"/>
+
+        <!-- BAD EXAMPLE -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="1. Cách thông thường (Không tối ưu)"
+            android:textStyle="bold"
+            android:layout_marginBottom="8dp"/>
+
+        <LinearLayout
+            android:id="@+id/container_bad"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="#EEEEEE"
+            android:padding="8dp">
+            
+            <!-- Bao bọc trong LinearLayout để mô phỏng cha -->
+            <!-- Kết quả: LinearLayout Cha -> LinearLayout Con (từ include) -> Views -->
+            <include layout="@layout/layout_bad_include"/>
+            
+        </LinearLayout>
         
-    <TextView 
-        android:text="This fragment demonstrates how the &lt;merge&gt; tag helps eliminate redundant view groups when including layouts." 
-        android:layout_width="wrap_content" 
-        android:layout_height="wrap_content"/>
+        <TextView
+            android:id="@+id/text_result_bad"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:fontFamily="monospace"
+            android:text="Phân tích: ..."
+            android:textSize="12sp"
+            android:padding="8dp"
+            android:background="#FFEBEE"
+            android:layout_marginBottom="24dp"/>
+
+
+        <!-- GOOD EXAMPLE -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="2. Sử dụng &lt;merge&gt; (Tối ưu)"
+            android:textStyle="bold"
+            android:layout_marginBottom="8dp"/>
+
+        <LinearLayout
+            android:id="@+id/container_good"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal" 
+            android:background="#EEEEEE"
+            android:padding="8dp">
+            
+            <!-- Bao bọc trong LinearLayout Cha -->
+            <!-- Kết quả: LinearLayout Cha -> Views trực tiếp (Bỏ qua lớp giữa) -->
+            <include layout="@layout/layout_good_merge"/>
+            
+        </LinearLayout>
         
-</LinearLayout>
+        <TextView
+            android:id="@+id/text_result_good"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:fontFamily="monospace"
+            android:text="Phân tích: ..."
+            android:textSize="12sp"
+            android:padding="8dp"
+            android:background="#E8F5E9"
+            android:layout_marginBottom="16dp"/>
+            
+        <Button
+            android:id="@+id/btn_analyze_merge"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="🔍 Phân tích cấu trúc Hierarchy"/>
+
+    </LinearLayout>
+</ScrollView>

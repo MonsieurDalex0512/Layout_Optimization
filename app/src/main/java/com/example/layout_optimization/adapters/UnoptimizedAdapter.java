@@ -1,6 +1,7 @@
 package com.example.layout_optimization.adapters;
 
 import android.content.Context;
+import android.graphics.Color;
 import android.os.Trace;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -28,14 +29,10 @@ public class UnoptimizedAdapter extends RecyclerView.Adapter<UnoptimizedAdapter.
     @NonNull
     @Override
     public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        // Add trace marker
         Trace.beginSection("inflate_unoptimized");
-        
         View view = LayoutInflater.from(context)
             .inflate(R.layout.item_unoptimized, parent, false);
-        
         Trace.endSection();
-        
         return new ViewHolder(view);
     }
     
@@ -46,8 +43,26 @@ public class UnoptimizedAdapter extends RecyclerView.Adapter<UnoptimizedAdapter.
         Item item = items.get(position);
         holder.title.setText(item.getTitle());
         holder.description.setText(item.getDescription());
-        holder.icon.setImageResource(item.getIconRes());
+        
+        // Hide Icon if resource ID is 0
+        if (item.getIconRes() == 0) {
+            holder.icon.setVisibility(View.GONE);
+        } else {
+            holder.icon.setVisibility(View.VISIBLE);
+            holder.icon.setImageResource(item.getIconRes());
+        }
+        
         holder.timestamp.setText(item.getTimestamp());
+        
+        // --- VISUAL CONFIRMATION ---
+        holder.itemView.setBackgroundColor(Color.parseColor("#FFEBEE"));
+        
+        // --- EXTREME LOAD SIMULATION ---
+        try {
+            Thread.sleep(30); 
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
         
         Trace.endSection();
     }

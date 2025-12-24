@@ -3,6 +3,7 @@ package com.example.layout_optimization;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.view.MenuItem;
+import android.view.View;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -14,7 +15,6 @@ import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTransaction;
 
 import com.example.layout_optimization.fragments.ComparisonFragment;
-import com.example.layout_optimization.fragments.MetricsFragment;
 import com.example.layout_optimization.fragments.ProfilerFragment;
 import com.example.layout_optimization.fragments.ReportFragment;
 import com.example.layout_optimization.utils.PerformanceMonitor;
@@ -30,13 +30,13 @@ public class MainActivity extends AppCompatActivity {
     
     // Fragments tags
     private static final String TAG_COMPARISON = "Comparison";
-    private static final String TAG_METRICS = "Metrics";
     private static final String TAG_PROFILER = "Profiler";
     private static final String TAG_REPORT = "Report";
+    // Tag cũ của Metrics để cleanup
+    private static final String TAG_METRICS = "Metrics";
     
     private Fragment activeFragment;
     private ComparisonFragment comparisonFragment;
-    private MetricsFragment metricsFragment;
     private ProfilerFragment profilerFragment;
     private ReportFragment reportFragment;
     
@@ -53,6 +53,9 @@ public class MainActivity extends AppCompatActivity {
         bottomNav = findViewById(R.id.bottom_navigation);
         fpsCounter = findViewById(R.id.fps_counter);
         fabBenchmark = findViewById(R.id.fab_benchmark);
+        
+        // Hide FAB
+        fabBenchmark.setVisibility(View.GONE);
         
         // Initialize PerformanceMonitor (Singleton)
         performanceMonitor = PerformanceMonitor.getInstance();
@@ -73,14 +76,12 @@ public class MainActivity extends AppCompatActivity {
         // Initialize Fragments
         if (savedInstanceState == null) {
             comparisonFragment = new ComparisonFragment();
-            metricsFragment = new MetricsFragment();
             profilerFragment = new ProfilerFragment();
             reportFragment = new ReportFragment();
             
             // Add all fragments but hide them except the first one
             getSupportFragmentManager().beginTransaction()
                 .add(R.id.fragment_container, comparisonFragment, TAG_COMPARISON)
-                .add(R.id.fragment_container, metricsFragment, TAG_METRICS).hide(metricsFragment)
                 .add(R.id.fragment_container, profilerFragment, TAG_PROFILER).hide(profilerFragment)
                 .add(R.id.fragment_container, reportFragment, TAG_REPORT).hide(reportFragment)
                 .commit();
@@ -89,15 +90,28 @@ public class MainActivity extends AppCompatActivity {
         } else {
             // Restore fragments if activity was recreated
             comparisonFragment = (ComparisonFragment) getSupportFragmentManager().findFragmentByTag(TAG_COMPARISON);
-            metricsFragment = (MetricsFragment) getSupportFragmentManager().findFragmentByTag(TAG_METRICS);
             profilerFragment = (ProfilerFragment) getSupportFragmentManager().findFragmentByTag(TAG_PROFILER);
             reportFragment = (ReportFragment) getSupportFragmentManager().findFragmentByTag(TAG_REPORT);
             
+            // Cleanup old Metrics fragment if exists (to prevent crash/overlap)
+            Fragment oldMetrics = getSupportFragmentManager().findFragmentByTag(TAG_METRICS);
+            if (oldMetrics != null) {
+                getSupportFragmentManager().beginTransaction().remove(oldMetrics).commit();
+            }
+
             // Find visible fragment
             if (comparisonFragment != null && comparisonFragment.isVisible()) activeFragment = comparisonFragment;
-            else if (metricsFragment != null && metricsFragment.isVisible()) activeFragment = metricsFragment;
             else if (profilerFragment != null && profilerFragment.isVisible()) activeFragment = profilerFragment;
             else if (reportFragment != null && reportFragment.isVisible()) activeFragment = reportFragment;
+            
+            // FALLBACK: If no active fragment found (e.g. was on Metrics), default to Comparison
+            if (activeFragment == null) {
+                if (comparisonFragment == null) comparisonFragment = new ComparisonFragment(); // Should exist but safe check
+                activeFragment = comparisonFragment;
+                getSupportFragmentManager().beginTransaction()
+                    .show(comparisonFragment)
+                    .commit();
+            }
         }
         
         // Setup navigation using show/hide
@@ -111,9 +125,6 @@ public class MainActivity extends AppCompatActivity {
                 if (itemId == R.id.nav_comparison) {
                     targetFragment = comparisonFragment;
                     title = "So sánh Layout";
-                } else if (itemId == R.id.nav_metrics) {
-                    targetFragment = metricsFragment;
-                    title = "Metrics Trực tiếp";
                 } else if (itemId == R.id.nav_profiler) {
                     targetFragment = profilerFragment;
                     title = "Công cụ Profiler";
@@ -123,6 +134,9 @@ public class MainActivity extends AppCompatActivity {
                 }
                 
                 if (targetFragment != null) {
+                    // Safe check for activeFragment
+                    if (activeFragment == null) activeFragment = comparisonFragment;
+                    
                     getSupportFragmentManager().beginTransaction()
                         .hide(activeFragment)
                         .show(targetFragment)

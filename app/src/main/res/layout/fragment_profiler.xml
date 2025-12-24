@@ -26,7 +26,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="🔍 Method Tracing"
+                    android:text="Method Tracing"
                     android:textStyle="bold"
                     android:textSize="18sp"/>
                 
@@ -40,7 +40,7 @@
                     android:id="@+id/text_trace_status" 
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="⚫ Chưa ghi"
+                    android:text="Chưa ghi"
                     android:textSize="16sp"
                     android:layout_marginTop="12dp"/>
                 
@@ -94,7 +94,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="📐 Layout Analyzer"
+                    android:text="Layout Analyzer"
                     android:textStyle="bold"
                     android:textSize="18sp"/>
                 
@@ -188,7 +188,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="📊 Kết quả Phân tích"
+                    android:text="Kết quả Phân tích"
                     android:textStyle="bold"
                     android:textSize="18sp"/>
                 
@@ -225,7 +225,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="💡 Mẹo Profiling"
+                    android:text="Mẹo Profiling"
                     android:textStyle="bold"/>
                 
                 <TextView
